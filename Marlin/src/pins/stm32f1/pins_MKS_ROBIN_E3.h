@@ -113,8 +113,8 @@
 //
 // Temperature Sensors
 //
-#define TEMP_BED_PIN                        PA1   //TB
-#define TEMP_0_PIN                          PA0   //TH1
+#define TEMP_BED_PIN                        PA1   // TB
+#define TEMP_0_PIN                          PA0   // TH1
 
 #define FIL_RUNOUT_PIN                      PB10  // MT_DET
 
@@ -140,11 +140,9 @@
     #define DOGLCD_SCK                      PB13
     #define DOGLCD_MOSI                     PB15
 
-    // Required for MKS_MINI_12864 with this board
-    #define MKS_LCD12864B
     #undef SHOW_BOOTSCREEN
 
-  #else                                           // !MKS_MINI_12864
+  #else
 
     #define LCD_PINS_D4                     PA6
     #if ENABLED(ULTIPANEL)
