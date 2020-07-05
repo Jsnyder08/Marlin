@@ -367,6 +367,10 @@
 
 #endif
 
+#if EITHER(LCD_USE_DMA_FSMC, FSMC_GRAPHICAL_TFT) || !PIN_EXISTS(SD_DETECT)
+  #define NO_LCD_REINIT 1  // Suppress LCD re-initialization
+#endif
+
 /**
  * Set defaults for missing (newer) options
  */
@@ -649,20 +653,22 @@
  */
 #if ENABLED(X_DUAL_ENDSTOPS)
   #if X_HOME_DIR > 0
-    #if X2_USE_ENDSTOP == _XMIN_
-      #define X2_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _XMAX_
-      #define X2_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _YMIN_
-      #define X2_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _YMAX_
-      #define X2_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _ZMIN_
-      #define X2_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _ZMAX_
-      #define X2_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-    #else
-      #define X2_MAX_ENDSTOP_INVERTING false
+    #ifndef X2_MAX_ENDSTOP_INVERTING
+      #if X2_USE_ENDSTOP == _XMIN_
+        #define X2_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _XMAX_
+        #define X2_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _YMIN_
+        #define X2_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _YMAX_
+        #define X2_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _ZMIN_
+        #define X2_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _ZMAX_
+        #define X2_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+      #else
+        #define X2_MAX_ENDSTOP_INVERTING false
+      #endif
     #endif
     #ifndef X2_MAX_PIN
       #if X2_USE_ENDSTOP == _XMIN_
@@ -701,22 +707,26 @@
         #define X2_MAX_PIN E7_DIAG_PIN
       #endif
     #endif
-    #define X2_MIN_ENDSTOP_INVERTING false
-  #else
-    #if X2_USE_ENDSTOP == _XMIN_
-      #define X2_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _XMAX_
-      #define X2_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _YMIN_
-      #define X2_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _YMAX_
-      #define X2_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _ZMIN_
-      #define X2_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-    #elif X2_USE_ENDSTOP == _ZMAX_
-      #define X2_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-    #else
+    #ifndef X2_MIN_ENDSTOP_INVERTING
       #define X2_MIN_ENDSTOP_INVERTING false
+    #endif
+  #else
+    #ifndef X2_MIN_ENDSTOP_INVERTING
+      #if X2_USE_ENDSTOP == _XMIN_
+        #define X2_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _XMAX_
+        #define X2_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _YMIN_
+        #define X2_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _YMAX_
+        #define X2_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _ZMIN_
+        #define X2_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+      #elif X2_USE_ENDSTOP == _ZMAX_
+        #define X2_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+      #else
+        #define X2_MIN_ENDSTOP_INVERTING false
+      #endif
     #endif
     #ifndef X2_MIN_PIN
       #if X2_USE_ENDSTOP == _XMIN_
@@ -755,7 +765,9 @@
         #define X2_MIN_PIN E7_DIAG_PIN
       #endif
     #endif
-    #define X2_MAX_ENDSTOP_INVERTING false
+    #ifndef X2_MAX_ENDSTOP_INVERTING
+      #define X2_MAX_ENDSTOP_INVERTING false
+    #endif
   #endif
 #endif
 
@@ -764,20 +776,22 @@
  */
 #if ENABLED(Y_DUAL_ENDSTOPS)
   #if Y_HOME_DIR > 0
-    #if Y2_USE_ENDSTOP == _XMIN_
-      #define Y2_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _XMAX_
-      #define Y2_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _YMIN_
-      #define Y2_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _YMAX_
-      #define Y2_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _ZMIN_
-      #define Y2_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _ZMAX_
-      #define Y2_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-    #else
-      #define Y2_MAX_ENDSTOP_INVERTING false
+    #ifndef Y2_MAX_ENDSTOP_INVERTING
+      #if Y2_USE_ENDSTOP == _XMIN_
+        #define Y2_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _XMAX_
+        #define Y2_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _YMIN_
+        #define Y2_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _YMAX_
+        #define Y2_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _ZMIN_
+        #define Y2_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _ZMAX_
+        #define Y2_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+      #else
+        #define Y2_MAX_ENDSTOP_INVERTING false
+      #endif
     #endif
     #ifndef Y2_MAX_PIN
       #if Y2_USE_ENDSTOP == _XMIN_
@@ -816,22 +830,26 @@
         #define Y2_MAX_PIN E7_DIAG_PIN
       #endif
     #endif
-    #define Y2_MIN_ENDSTOP_INVERTING false
-  #else
-    #if Y2_USE_ENDSTOP == _XMIN_
-      #define Y2_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _XMAX_
-      #define Y2_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _YMIN_
-      #define Y2_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _YMAX_
-      #define Y2_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _ZMIN_
-      #define Y2_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-    #elif Y2_USE_ENDSTOP == _ZMAX_
-      #define Y2_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-    #else
+    #ifndef Y2_MIN_ENDSTOP_INVERTING
       #define Y2_MIN_ENDSTOP_INVERTING false
+    #endif
+  #else
+    #ifndef Y2_MIN_ENDSTOP_INVERTING
+      #if Y2_USE_ENDSTOP == _XMIN_
+        #define Y2_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _XMAX_
+        #define Y2_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _YMIN_
+        #define Y2_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _YMAX_
+        #define Y2_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _ZMIN_
+        #define Y2_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+      #elif Y2_USE_ENDSTOP == _ZMAX_
+        #define Y2_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+      #else
+        #define Y2_MIN_ENDSTOP_INVERTING false
+      #endif
     #endif
     #ifndef Y2_MIN_PIN
       #if Y2_USE_ENDSTOP == _XMIN_
@@ -870,7 +888,9 @@
         #define Y2_MIN_PIN E7_DIAG_PIN
       #endif
     #endif
-    #define Y2_MAX_ENDSTOP_INVERTING false
+    #ifndef Y2_MAX_ENDSTOP_INVERTING
+      #define Y2_MAX_ENDSTOP_INVERTING false
+    #endif
   #endif
 #endif
 
@@ -880,20 +900,22 @@
 #if ENABLED(Z_MULTI_ENDSTOPS)
 
   #if Z_HOME_DIR > 0
-    #if Z2_USE_ENDSTOP == _XMIN_
-      #define Z2_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _XMAX_
-      #define Z2_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _YMIN_
-      #define Z2_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _YMAX_
-      #define Z2_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _ZMIN_
-      #define Z2_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _ZMAX_
-      #define Z2_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-    #else
-      #define Z2_MAX_ENDSTOP_INVERTING false
+    #ifndef Z2_MAX_ENDSTOP_INVERTING
+      #if Z2_USE_ENDSTOP == _XMIN_
+        #define Z2_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _XMAX_
+        #define Z2_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _YMIN_
+        #define Z2_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _YMAX_
+        #define Z2_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _ZMIN_
+        #define Z2_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _ZMAX_
+        #define Z2_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+      #else
+        #define Z2_MAX_ENDSTOP_INVERTING false
+      #endif
     #endif
     #ifndef Z2_MAX_PIN
       #if Z2_USE_ENDSTOP == _XMIN_
@@ -932,22 +954,26 @@
         #define Z2_MAX_PIN E7_DIAG_PIN
       #endif
     #endif
-    #define Z2_MIN_ENDSTOP_INVERTING false
-  #else
-    #if Z2_USE_ENDSTOP == _XMIN_
-      #define Z2_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _XMAX_
-      #define Z2_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _YMIN_
-      #define Z2_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _YMAX_
-      #define Z2_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _ZMIN_
-      #define Z2_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-    #elif Z2_USE_ENDSTOP == _ZMAX_
-      #define Z2_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-    #else
+    #ifndef Z2_MIN_ENDSTOP_INVERTING
       #define Z2_MIN_ENDSTOP_INVERTING false
+    #endif
+  #else
+    #ifndef Z2_MIN_ENDSTOP_INVERTING
+      #if Z2_USE_ENDSTOP == _XMIN_
+        #define Z2_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _XMAX_
+        #define Z2_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _YMIN_
+        #define Z2_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _YMAX_
+        #define Z2_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _ZMIN_
+        #define Z2_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+      #elif Z2_USE_ENDSTOP == _ZMAX_
+        #define Z2_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+      #else
+        #define Z2_MIN_ENDSTOP_INVERTING false
+      #endif
     #endif
     #ifndef Z2_MIN_PIN
       #if Z2_USE_ENDSTOP == _XMIN_
@@ -986,25 +1012,29 @@
         #define Z2_MIN_PIN E7_DIAG_PIN
       #endif
     #endif
-    #define Z2_MAX_ENDSTOP_INVERTING false
+    #ifndef Z2_MAX_ENDSTOP_INVERTING
+      #define Z2_MAX_ENDSTOP_INVERTING false
+    #endif
   #endif
 
   #if NUM_Z_STEPPER_DRIVERS >= 3
     #if Z_HOME_DIR > 0
-      #if Z3_USE_ENDSTOP == _XMIN_
-        #define Z3_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _XMAX_
-        #define Z3_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _YMIN_
-        #define Z3_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _YMAX_
-        #define Z3_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _ZMIN_
-        #define Z3_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _ZMAX_
-        #define Z3_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-      #else
-        #define Z3_MAX_ENDSTOP_INVERTING false
+      #ifndef Z3_MAX_ENDSTOP_INVERTING
+        #if Z3_USE_ENDSTOP == _XMIN_
+          #define Z3_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _XMAX_
+          #define Z3_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _YMIN_
+          #define Z3_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _YMAX_
+          #define Z3_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _ZMIN_
+          #define Z3_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _ZMAX_
+          #define Z3_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+        #else
+          #define Z3_MAX_ENDSTOP_INVERTING false
+        #endif
       #endif
       #ifndef Z3_MAX_PIN
         #if Z3_USE_ENDSTOP == _XMIN_
@@ -1043,22 +1073,26 @@
           #define Z3_MAX_PIN E7_DIAG_PIN
         #endif
       #endif
-      #define Z3_MIN_ENDSTOP_INVERTING false
-    #else
-      #if Z3_USE_ENDSTOP == _XMIN_
-        #define Z3_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _XMAX_
-        #define Z3_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _YMIN_
-        #define Z3_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _YMAX_
-        #define Z3_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _ZMIN_
-        #define Z3_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-      #elif Z3_USE_ENDSTOP == _ZMAX_
-        #define Z3_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-      #else
+      #ifndef Z3_MIN_ENDSTOP_INVERTING
         #define Z3_MIN_ENDSTOP_INVERTING false
+      #endif
+    #else
+      #ifndef Z3_MIN_ENDSTOP_INVERTING
+        #if Z3_USE_ENDSTOP == _XMIN_
+          #define Z3_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _XMAX_
+          #define Z3_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _YMIN_
+          #define Z3_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _YMAX_
+          #define Z3_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _ZMIN_
+          #define Z3_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+        #elif Z3_USE_ENDSTOP == _ZMAX_
+          #define Z3_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+        #else
+          #define Z3_MIN_ENDSTOP_INVERTING false
+        #endif
       #endif
       #ifndef Z3_MIN_PIN
         #if Z3_USE_ENDSTOP == _XMIN_
@@ -1097,26 +1131,30 @@
           #define Z3_MIN_PIN E7_DIAG_PIN
         #endif
       #endif
-      #define Z3_MAX_ENDSTOP_INVERTING false
+      #ifndef Z3_MAX_ENDSTOP_INVERTING
+        #define Z3_MAX_ENDSTOP_INVERTING false
+      #endif
     #endif
   #endif
 
   #if NUM_Z_STEPPER_DRIVERS >= 4
     #if Z_HOME_DIR > 0
-      #if Z4_USE_ENDSTOP == _XMIN_
-        #define Z4_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _XMAX_
-        #define Z4_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _YMIN_
-        #define Z4_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _YMAX_
-        #define Z4_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _ZMIN_
-        #define Z4_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _ZMAX_
-        #define Z4_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-      #else
-        #define Z4_MAX_ENDSTOP_INVERTING false
+      #ifndef Z4_MAX_ENDSTOP_INVERTING
+        #if Z4_USE_ENDSTOP == _XMIN_
+          #define Z4_MAX_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _XMAX_
+          #define Z4_MAX_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _YMIN_
+          #define Z4_MAX_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _YMAX_
+          #define Z4_MAX_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _ZMIN_
+          #define Z4_MAX_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _ZMAX_
+          #define Z4_MAX_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+        #else
+          #define Z4_MAX_ENDSTOP_INVERTING false
+        #endif
       #endif
       #ifndef Z4_MAX_PIN
         #if Z4_USE_ENDSTOP == _XMIN_
@@ -1155,22 +1193,26 @@
           #define Z4_MAX_PIN E7_DIAG_PIN
         #endif
       #endif
-      #define Z4_MIN_ENDSTOP_INVERTING false
-    #else
-      #if Z4_USE_ENDSTOP == _XMIN_
-        #define Z4_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _XMAX_
-        #define Z4_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _YMIN_
-        #define Z4_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _YMAX_
-        #define Z4_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _ZMIN_
-        #define Z4_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
-      #elif Z4_USE_ENDSTOP == _ZMAX_
-        #define Z4_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
-      #else
+      #ifndef Z4_MIN_ENDSTOP_INVERTING
         #define Z4_MIN_ENDSTOP_INVERTING false
+      #endif
+    #else
+      #ifndef Z4_MIN_ENDSTOP_INVERTING
+        #if Z4_USE_ENDSTOP == _XMIN_
+          #define Z4_MIN_ENDSTOP_INVERTING X_MIN_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _XMAX_
+          #define Z4_MIN_ENDSTOP_INVERTING X_MAX_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _YMIN_
+          #define Z4_MIN_ENDSTOP_INVERTING Y_MIN_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _YMAX_
+          #define Z4_MIN_ENDSTOP_INVERTING Y_MAX_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _ZMIN_
+          #define Z4_MIN_ENDSTOP_INVERTING Z_MIN_ENDSTOP_INVERTING
+        #elif Z4_USE_ENDSTOP == _ZMAX_
+          #define Z4_MIN_ENDSTOP_INVERTING Z_MAX_ENDSTOP_INVERTING
+        #else
+          #define Z4_MIN_ENDSTOP_INVERTING false
+        #endif
       #endif
       #ifndef Z4_MIN_PIN
         #if Z4_USE_ENDSTOP == _XMIN_
@@ -1209,7 +1251,9 @@
           #define Z4_MIN_PIN E7_DIAG_PIN
         #endif
       #endif
-      #define Z4_MAX_ENDSTOP_INVERTING false
+      #ifndef Z4_MAX_ENDSTOP_INVERTING
+        #define Z4_MAX_ENDSTOP_INVERTING false
+      #endif
     #endif
   #endif
 
@@ -1852,6 +1896,10 @@
   #define HAS_CONTROLLER_FAN 1
 #endif
 
+#if BED_OR_CHAMBER || HAS_FAN0
+  #define BED_OR_CHAMBER_OR_FAN 1
+#endif
+
 // Servos
 #if PIN_EXISTS(SERVO0) && NUM_SERVOS > 0
   #define HAS_SERVO_0 1
@@ -2071,6 +2119,16 @@
     #define HEATER_CHAMBER_INVERTING false
   #endif
   #define WRITE_HEATER_CHAMBER(v) WRITE(HEATER_CHAMBER_PIN, (v) ^ HEATER_CHAMBER_INVERTING)
+#endif
+
+#if HAS_HOTEND || HAS_HEATED_BED || HAS_HEATED_CHAMBER
+  #define HAS_TEMPERATURE 1
+#endif
+
+#if HAS_TEMPERATURE && EITHER(HAS_LCD_MENU, DWIN_CREALITY_LCD)
+  #define PREHEAT_COUNT 2
+#else
+  #undef PREHEAT_COUNT
 #endif
 
 /**
