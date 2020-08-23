@@ -1264,7 +1264,7 @@ void Stepper::set_directions() {
     }
 
     FORCE_INLINE int32_t Stepper::_eval_bezier_curve(const uint32_t curr_step) {
-      #if defined(__ARM__) || defined(__thumb__)
+      #if defined(__arm__) || defined(__thumb__)
 
         // For ARM Cortex M3/M4 CPUs, we have the optimized assembler version, that takes 43 cycles to execute
         uint32_t flo = 0;
@@ -2559,7 +2559,7 @@ void Stepper::init() {
     AXIS_INIT(Z, Z);
   #endif
 
-  #if E_STEPPERS > 0 && HAS_E0_STEP
+  #if E_STEPPERS && HAS_E0_STEP
     E_AXIS_INIT(0);
   #endif
   #if E_STEPPERS > 1 && HAS_E1_STEP
