@@ -83,10 +83,6 @@ Stepper stepper; // Singleton
 
 #define BABYSTEPPING_EXTRA_DIR_WAIT
 
-#if HAS_MOTOR_CURRENT_PWM
-  bool Stepper::initialized; // = false
-#endif
-
 #ifdef __AVR__
   #include "speed_lookuptable.h"
 #endif
@@ -96,7 +92,7 @@ Stepper stepper; // Singleton
 #include "motion.h"
 
 #include "temperature.h"
-#include "../lcd/ultralcd.h"
+#include "../lcd/marlinui.h"
 #include "../gcode/queue.h"
 #include "../sd/cardreader.h"
 #include "../MarlinCore.h"
@@ -110,7 +106,7 @@ Stepper stepper; // Singleton
   #include "../feature/dac/dac_dac084s085.h"
 #endif
 
-#if HAS_DIGIPOTSS
+#if HAS_MOTOR_CURRENT_SPI
   #include <SPI.h>
 #endif
 
@@ -118,7 +114,7 @@ Stepper stepper; // Singleton
   #include "../feature/mixing.h"
 #endif
 
-#ifdef FILAMENT_RUNOUT_DISTANCE_MM
+#if HAS_FILAMENT_RUNOUT_DISTANCE
   #include "../feature/runout.h"
 #endif
 
@@ -142,8 +138,12 @@ Stepper stepper; // Singleton
   bool Stepper::separate_multi_axis = false;
 #endif
 
-#if HAS_MOTOR_CURRENT_PWM
-  uint32_t Stepper::motor_current_setting[3]; // Initialized by settings.load()
+#if HAS_MOTOR_CURRENT_SPI || HAS_MOTOR_CURRENT_PWM
+  bool Stepper::initialized; // = false
+  uint32_t Stepper::motor_current_setting[MOTOR_CURRENT_COUNT]; // Initialized by settings.load()
+  #if HAS_MOTOR_CURRENT_SPI
+    constexpr uint32_t Stepper::digipot_count[];
+  #endif
 #endif
 
 // private:
@@ -155,7 +155,7 @@ uint8_t Stepper::last_direction_bits, // = 0
 
 bool Stepper::abort_current_block;
 
-#if DISABLED(MIXING_EXTRUDER) && EXTRUDERS > 1
+#if DISABLED(MIXING_EXTRUDER) && HAS_MULTI_EXTRUDER
   uint8_t Stepper::last_moved_extruder = 0xFF;
 #endif
 
@@ -180,7 +180,7 @@ bool Stepper::abort_current_block;
 uint32_t Stepper::acceleration_time, Stepper::deceleration_time;
 uint8_t Stepper::steps_per_isr;
 
-TERN(ADAPTIVE_STEP_SMOOTHING,,constexpr) uint8_t Stepper::oversampling_factor;
+IF_DISABLED(ADAPTIVE_STEP_SMOOTHING, constexpr) uint8_t Stepper::oversampling_factor;
 
 xyze_long_t Stepper::delta_error{0};
 
@@ -191,7 +191,7 @@ uint32_t Stepper::advance_divisor = 0,
          Stepper::decelerate_after,          // The count at which to start decelerating
          Stepper::step_event_count;          // The total event count for the current block
 
-#if EXTRUDERS > 1 || ENABLED(MIXING_EXTRUDER)
+#if EITHER(HAS_MULTI_EXTRUDER, MIXING_EXTRUDER)
   uint8_t Stepper::stepper_extruder;
 #else
   constexpr uint8_t Stepper::stepper_extruder;
@@ -241,8 +241,8 @@ xyze_long_t Stepper::count_position{0};
 xyze_int8_t Stepper::count_direction{0};
 
 #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-  Stepper::stepper_laser_t Stepper::laser = {
-    .trap_en = false,
+  Stepper::stepper_laser_t Stepper::laser_trap = {
+    .enabled = false,
     .cur_power = 0,
     .cruise_set = false,
     #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
@@ -348,7 +348,7 @@ xyze_int8_t Stepper::count_direction{0};
   }
 
 #if ENABLED(X_DUAL_STEPPER_DRIVERS)
-  #define X_APPLY_DIR(v,Q) do{ X_DIR_WRITE(v); X2_DIR_WRITE((v) != INVERT_X2_VS_X_DIR); }while(0)
+  #define X_APPLY_DIR(v,Q) do{ X_DIR_WRITE(v); X2_DIR_WRITE((v) ^ ENABLED(INVERT_X2_VS_X_DIR)); }while(0)
   #if ENABLED(X_DUAL_ENDSTOPS)
     #define X_APPLY_STEP(v,Q) DUAL_ENDSTOP_APPLY_STEP(X,v)
   #else
@@ -356,12 +356,12 @@ xyze_int8_t Stepper::count_direction{0};
   #endif
 #elif ENABLED(DUAL_X_CARRIAGE)
   #define X_APPLY_DIR(v,ALWAYS) do{ \
-    if (extruder_duplication_enabled || ALWAYS) { X_DIR_WRITE(v); X2_DIR_WRITE(mirrored_duplication_mode ? !(v) : v); } \
-    else if (movement_extruder()) X2_DIR_WRITE(v); else X_DIR_WRITE(v); \
+    if (extruder_duplication_enabled || ALWAYS) { X_DIR_WRITE(v); X2_DIR_WRITE((v) ^ idex_mirrored_mode); } \
+    else if (last_moved_extruder) X2_DIR_WRITE(v); else X_DIR_WRITE(v); \
   }while(0)
   #define X_APPLY_STEP(v,ALWAYS) do{ \
     if (extruder_duplication_enabled || ALWAYS) { X_STEP_WRITE(v); X2_STEP_WRITE(v); } \
-    else if (movement_extruder()) X2_STEP_WRITE(v); else X_STEP_WRITE(v); \
+    else if (last_moved_extruder) X2_STEP_WRITE(v); else X_STEP_WRITE(v); \
   }while(0)
 #else
   #define X_APPLY_DIR(v,Q) X_DIR_WRITE(v)
@@ -369,7 +369,7 @@ xyze_int8_t Stepper::count_direction{0};
 #endif
 
 #if ENABLED(Y_DUAL_STEPPER_DRIVERS)
-  #define Y_APPLY_DIR(v,Q) do{ Y_DIR_WRITE(v); Y2_DIR_WRITE((v) != INVERT_Y2_VS_Y_DIR); }while(0)
+  #define Y_APPLY_DIR(v,Q) do{ Y_DIR_WRITE(v); Y2_DIR_WRITE((v) ^ ENABLED(INVERT_Y2_VS_Y_DIR)); }while(0)
   #if ENABLED(Y_DUAL_ENDSTOPS)
     #define Y_APPLY_STEP(v,Q) DUAL_ENDSTOP_APPLY_STEP(Y,v)
   #else
@@ -1605,10 +1605,9 @@ void Stepper::pulse_phase_isr() {
               PAGE_SEGMENT_UPDATE(Z, high >> 4);
               PAGE_SEGMENT_UPDATE(E, high & 0xF);
 
-              if (dm != last_direction_bits) {
-                last_direction_bits = dm;
-                set_directions();
-              }
+              if (dm != last_direction_bits)
+                set_directions(dm);
+
             } break;
 
             default: break;
@@ -1803,9 +1802,7 @@ uint32_t Stepper::block_phase_isr() {
           PAGE_SEGMENT_UPDATE_POS(E);
         }
       #endif
-      #ifdef FILAMENT_RUNOUT_DISTANCE_MM
-        runout.block_completed(current_block);
-      #endif
+      TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, runout.block_completed(current_block));
       discard_current_block();
     }
     else {
@@ -1840,28 +1837,28 @@ uint32_t Stepper::block_phase_isr() {
 
         // Update laser - Accelerating
         #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          if (laser.trap_en) {
+          if (laser_trap.enabled) {
             #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
               if (current_block->laser.entry_per) {
-                laser.acc_step_count -= step_events_completed - laser.last_step_count;
-                laser.last_step_count = step_events_completed;
+                laser_trap.acc_step_count -= step_events_completed - laser_trap.last_step_count;
+                laser_trap.last_step_count = step_events_completed;
 
                 // Should be faster than a divide, since this should trip just once
-                if (laser.acc_step_count < 0) {
-                  while (laser.acc_step_count < 0) {
-                    laser.acc_step_count += current_block->laser.entry_per;
-                    if (laser.cur_power < current_block->laser.power) laser.cur_power++;
+                if (laser_trap.acc_step_count < 0) {
+                  while (laser_trap.acc_step_count < 0) {
+                    laser_trap.acc_step_count += current_block->laser.entry_per;
+                    if (laser_trap.cur_power < current_block->laser.power) laser_trap.cur_power++;
                   }
-                  cutter.set_ocr_power(laser.cur_power);
+                  cutter.set_ocr_power(laser_trap.cur_power);
                 }
               }
             #else
-              if (laser.till_update)
-                laser.till_update--;
+              if (laser_trap.till_update)
+                laser_trap.till_update--;
               else {
-                laser.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
-                laser.cur_power = (current_block->laser.power * acc_step_rate) / current_block->nominal_rate;
-                cutter.set_ocr_power(laser.cur_power); // Cycle efficiency is irrelevant it the last line was many cycles
+                laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
+                laser_trap.cur_power = (current_block->laser.power * acc_step_rate) / current_block->nominal_rate;
+                cutter.set_ocr_power(laser_trap.cur_power); // Cycle efficiency is irrelevant it the last line was many cycles
               }
             #endif
           }
@@ -1917,28 +1914,28 @@ uint32_t Stepper::block_phase_isr() {
 
         // Update laser - Decelerating
         #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          if (laser.trap_en) {
+          if (laser_trap.enabled) {
             #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
               if (current_block->laser.exit_per) {
-                laser.acc_step_count -= step_events_completed - laser.last_step_count;
-                laser.last_step_count = step_events_completed;
+                laser_trap.acc_step_count -= step_events_completed - laser_trap.last_step_count;
+                laser_trap.last_step_count = step_events_completed;
 
                 // Should be faster than a divide, since this should trip just once
-                if (laser.acc_step_count < 0) {
-                  while (laser.acc_step_count < 0) {
-                    laser.acc_step_count += current_block->laser.exit_per;
-                    if (laser.cur_power > current_block->laser.power_exit) laser.cur_power--;
+                if (laser_trap.acc_step_count < 0) {
+                  while (laser_trap.acc_step_count < 0) {
+                    laser_trap.acc_step_count += current_block->laser.exit_per;
+                    if (laser_trap.cur_power > current_block->laser.power_exit) laser_trap.cur_power--;
                   }
-                  cutter.set_ocr_power(laser.cur_power);
+                  cutter.set_ocr_power(laser_trap.cur_power);
                 }
               }
             #else
-              if (laser.till_update)
-                laser.till_update--;
+              if (laser_trap.till_update)
+                laser_trap.till_update--;
               else {
-                laser.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
-                laser.cur_power = (current_block->laser.power * step_rate) / current_block->nominal_rate;
-                cutter.set_ocr_power(laser.cur_power); // Cycle efficiency isn't relevant when the last line was many cycles
+                laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
+                laser_trap.cur_power = (current_block->laser.power * step_rate) / current_block->nominal_rate;
+                cutter.set_ocr_power(laser_trap.cur_power); // Cycle efficiency isn't relevant when the last line was many cycles
               }
             #endif
           }
@@ -1963,16 +1960,16 @@ uint32_t Stepper::block_phase_isr() {
 
         // Update laser - Cruising
         #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          if (laser.trap_en) {
-            if (!laser.cruise_set) {
-              laser.cur_power = current_block->laser.power;
-              cutter.set_ocr_power(laser.cur_power);
-              laser.cruise_set = true;
+          if (laser_trap.enabled) {
+            if (!laser_trap.cruise_set) {
+              laser_trap.cur_power = current_block->laser.power;
+              cutter.set_ocr_power(laser_trap.cur_power);
+              laser_trap.cruise_set = true;
             }
             #if ENABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-              laser.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
+              laser_trap.till_update = LASER_POWER_INLINE_TRAPEZOID_CONT_PER;
             #else
-              laser.last_step_count = step_events_completed;
+              laser_trap.last_step_count = step_events_completed;
             #endif
           }
         #endif
@@ -1997,7 +1994,10 @@ uint32_t Stepper::block_phase_isr() {
           return interval; // No more queued movements!
       }
 
-      TERN_(HAS_CUTTER, cutter.apply_power(current_block->cutter_power));
+      // For non-inline cutter, grossly apply power
+      #if ENABLED(LASER_FEATURE) && DISABLED(LASER_POWER_INLINE)
+        cutter.apply_power(current_block->cutter_power);
+      #endif
 
       TERN_(POWER_LOSS_RECOVERY, recovery.info.sdpos = current_block->sdpos);
 
@@ -2130,9 +2130,7 @@ uint32_t Stepper::block_phase_isr() {
         MIXER_STEPPER_SETUP();
       #endif
 
-      #if EXTRUDERS > 1
-        stepper_extruder = current_block->extruder;
-      #endif
+      TERN_(HAS_MULTI_EXTRUDER, stepper_extruder = current_block->extruder);
 
       // Initialize the trapezoid generator from the current block.
       #if ENABLED(LIN_ADVANCE)
@@ -2150,53 +2148,42 @@ uint32_t Stepper::block_phase_isr() {
         else LA_isr_rate = LA_ADV_NEVER;
       #endif
 
-      if (
-        #if HAS_L64XX
-          true  // Always set direction for L64xx (This also enables the chips)
-        #else
-          current_block->direction_bits != last_direction_bits
-          #if DISABLED(MIXING_EXTRUDER)
-            || stepper_extruder != last_moved_extruder
-          #endif
-        #endif
+      if ( ENABLED(HAS_L64XX)       // Always set direction for L64xx (Also enables the chips)
+        || ENABLED(DUAL_X_CARRIAGE) // TODO: Find out why this fixes "jittery" small circles
+        || current_block->direction_bits != last_direction_bits
+        || TERN(MIXING_EXTRUDER, false, stepper_extruder != last_moved_extruder)
       ) {
-        last_direction_bits = current_block->direction_bits;
-        #if EXTRUDERS > 1
-          last_moved_extruder = stepper_extruder;
-        #endif
-
+        TERN_(HAS_MULTI_EXTRUDER, last_moved_extruder = stepper_extruder);
         TERN_(HAS_L64XX, L64XX_OK_to_power_up = true);
-        set_directions();
+        set_directions(current_block->direction_bits);
       }
 
       #if ENABLED(LASER_POWER_INLINE)
-        const uint8_t stat = current_block->laser.status;
+        const power_status_t stat = current_block->laser.status;
         #if ENABLED(LASER_POWER_INLINE_TRAPEZOID)
-          laser.trap_en = (stat & 0x03) == 0x03;
-          laser.cur_power = current_block->laser.power_entry; // RESET STATE
-          laser.cruise_set = false;
+          laser_trap.enabled = stat.isPlanned && stat.isEnabled;
+          laser_trap.cur_power = current_block->laser.power_entry; // RESET STATE
+          laser_trap.cruise_set = false;
           #if DISABLED(LASER_POWER_INLINE_TRAPEZOID_CONT)
-            laser.last_step_count = 0;
-            laser.acc_step_count = current_block->laser.entry_per / 2;
+            laser_trap.last_step_count = 0;
+            laser_trap.acc_step_count = current_block->laser.entry_per / 2;
           #else
-            laser.till_update = 0;
+            laser_trap.till_update = 0;
           #endif
           // Always have PWM in this case
-          if (TEST(stat, 0)) {                        // Planner controls the laser
-            if (TEST(stat, 1))                        // Laser is on
-              cutter.set_ocr_power(laser.cur_power);
-            else
-              cutter.set_power(0);
+          if (stat.isPlanned) {                        // Planner controls the laser
+            cutter.set_ocr_power(
+              stat.isEnabled ? laser_trap.cur_power : 0 // ON with power or OFF
+            );
           }
         #else
-          if (TEST(stat, 0)) {                        // Planner controls the laser
+          if (stat.isPlanned) {                        // Planner controls the laser
             #if ENABLED(SPINDLE_LASER_PWM)
-              if (TEST(stat, 1))                      // Laser is on
-                cutter.set_ocr_power(current_block->laser.power);
-              else
-                cutter.set_power(0);
+              cutter.set_ocr_power(
+                stat.isEnabled ? current_block->laser.power : 0 // ON with power or OFF
+              );
             #else
-              cutter.set_enabled(TEST(stat, 1));
+              cutter.set_enabled(stat.isEnabled);
             #endif
           }
         #endif
@@ -2237,15 +2224,14 @@ uint32_t Stepper::block_phase_isr() {
     #if ENABLED(LASER_POWER_INLINE_CONTINUOUS)
       else { // No new block found; so apply inline laser parameters
         // This should mean ending file with 'M5 I' will stop the laser; thus the inline flag isn't needed
-        const uint8_t stat = planner.laser.status;
-        if (TEST(stat, 0)) {             // Planner controls the laser
+        const power_status_t stat = planner.laser_inline.status;
+        if (stat.isPlanned) {             // Planner controls the laser
           #if ENABLED(SPINDLE_LASER_PWM)
-            if (TEST(stat, 1))           // Laser is on
-              cutter.set_ocr_power(planner.laser.power);
-            else
-              cutter.set_power(0);
+            cutter.set_ocr_power(
+              stat.isEnabled ? planner.laser_inline.power : 0 // ON with power or OFF
+            );
           #else
-            cutter.set_enabled(TEST(stat, 1));
+            cutter.set_enabled(stat.isEnabled);
           #endif
         }
       }
@@ -2269,7 +2255,6 @@ uint32_t Stepper::block_phase_isr() {
         interval = LA_isr_rate;
       }
       else if (step_events_completed < decelerate_after && LA_current_adv_steps < LA_max_adv_steps) {
-             //step_events_completed <= (uint32_t)accelerate_until) {
         LA_steps++;
         LA_current_adv_steps++;
         interval = LA_isr_rate;
@@ -2279,6 +2264,8 @@ uint32_t Stepper::block_phase_isr() {
     }
     else
       interval = LA_ADV_NEVER;
+
+    if (!LA_steps) return interval; // Leave pins alone if there are no steps!
 
     DIR_WAIT_BEFORE();
 
@@ -2591,15 +2578,12 @@ void Stepper::init() {
   #endif
 
   // Init direction bits for first moves
-  last_direction_bits = 0
-    | (INVERT_X_DIR ? _BV(X_AXIS) : 0)
-    | (INVERT_Y_DIR ? _BV(Y_AXIS) : 0)
-    | (INVERT_Z_DIR ? _BV(Z_AXIS) : 0);
+  set_directions((INVERT_X_DIR ? _BV(X_AXIS) : 0)
+               | (INVERT_Y_DIR ? _BV(Y_AXIS) : 0)
+               | (INVERT_Z_DIR ? _BV(Z_AXIS) : 0));
 
-  set_directions();
-
-  #if HAS_DIGIPOTSS || HAS_MOTOR_CURRENT_PWM
-    TERN_(HAS_MOTOR_CURRENT_PWM, initialized = true);
+  #if HAS_MOTOR_CURRENT_SPI || HAS_MOTOR_CURRENT_PWM
+    initialized = true;
     digipot_init();
   #endif
 }
@@ -2938,10 +2922,10 @@ void Stepper::report_positions() {
  * Software-controlled Stepper Motor Current
  */
 
-#if HAS_DIGIPOTSS
+#if HAS_MOTOR_CURRENT_SPI
 
   // From Arduino DigitalPotControl example
-  void Stepper::digitalPotWrite(const int16_t address, const int16_t value) {
+  void Stepper::set_digipot_value_spi(const int16_t address, const int16_t value) {
     WRITE(DIGIPOTSS_PIN, LOW);  // Take the SS pin low to select the chip
     SPI.transfer(address);      // Send the address and value via SPI
     SPI.transfer(value);
@@ -2949,7 +2933,7 @@ void Stepper::report_positions() {
     //delay(10);
   }
 
-#endif // HAS_DIGIPOTSS
+#endif // HAS_MOTOR_CURRENT_SPI
 
 #if HAS_MOTOR_CURRENT_PWM
 
@@ -2966,7 +2950,7 @@ void Stepper::report_positions() {
         #if ANY_PIN(MOTOR_CURRENT_PWM_E, MOTOR_CURRENT_PWM_E0, MOTOR_CURRENT_PWM_E1)
           case 2:
         #endif
-            digipot_current(i, motor_current_setting[i]);
+            set_digipot_current(i, motor_current_setting[i]);
         default: break;
       }
     }
@@ -2976,21 +2960,22 @@ void Stepper::report_positions() {
 
 #if !MB(PRINTRBOARD_G2)
 
-  #if HAS_DIGIPOTSS || HAS_MOTOR_CURRENT_PWM
+  #if HAS_MOTOR_CURRENT_SPI || HAS_MOTOR_CURRENT_PWM
 
-    void Stepper::digipot_current(const uint8_t driver, const int16_t current) {
+    void Stepper::set_digipot_current(const uint8_t driver, const int16_t current) {
+      if (WITHIN(driver, 0, MOTOR_CURRENT_COUNT - 1))
+        motor_current_setting[driver] = current; // update motor_current_setting
 
-      #if HAS_DIGIPOTSS
+      if (!initialized) return;
+
+      #if HAS_MOTOR_CURRENT_SPI
+
+        //SERIAL_ECHOLNPAIR("Digipotss current ", current);
 
         const uint8_t digipot_ch[] = DIGIPOT_CHANNELS;
-        digitalPotWrite(digipot_ch[driver], current);
+        set_digipot_value_spi(digipot_ch[driver], current);
 
       #elif HAS_MOTOR_CURRENT_PWM
-
-        if (!initialized) return;
-
-        if (WITHIN(driver, 0, COUNT(motor_current_setting) - 1))
-          motor_current_setting[driver] = current; // update motor_current_setting
 
         #define _WRITE_CURRENT_PWM(P) analogWrite(pin_t(MOTOR_CURRENT_PWM_## P ##_PIN), 255L * current / (MOTOR_CURRENT_PWM_RANGE))
         switch (driver) {
@@ -3027,17 +3012,13 @@ void Stepper::report_positions() {
 
     void Stepper::digipot_init() {
 
-      #if HAS_DIGIPOTSS
-
-        static const uint8_t digipot_motor_current[] = DIGIPOT_MOTOR_CURRENT;
+      #if HAS_MOTOR_CURRENT_SPI
 
         SPI.begin();
         SET_OUTPUT(DIGIPOTSS_PIN);
 
-        LOOP_L_N(i, COUNT(digipot_motor_current)) {
-          //digitalPotWrite(digipot_ch[i], digipot_motor_current[i]);
-          digipot_current(i, digipot_motor_current[i]);
-        }
+        LOOP_L_N(i, COUNT(motor_current_setting))
+          set_digipot_current(i, motor_current_setting[i]);
 
       #elif HAS_MOTOR_CURRENT_PWM
 
