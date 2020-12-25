@@ -70,7 +70,7 @@
 // @section info
 
 // Author info of this build printed to the host during boot and M115
-#define STRING_CONFIG_H_AUTHOR "(none, default config)" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "(Cloudberry, X1 Sidewinder Edition)" // Who made the changes.
 //#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 /**
@@ -485,9 +485,20 @@
   //#define PID_PARAMS_PER_HOTEND // Uses separate PID parameters for each extruder (useful for mismatched extruders)
                                   // Set/get with gcode: M301 E[extruder number, 0-2]
 
+<<<<<<< Updated upstream
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
 
    // Sidewinder X1
+=======
+  #if ENABLED(PID_PARAMS_PER_HOTEND)
+    // Specify between 1 and HOTENDS values per array.
+    // If fewer than EXTRUDER values are provided, the last element will be repeated.
+    #define DEFAULT_Kp_LIST {  22.20,  22.20 }
+    #define DEFAULT_Ki_LIST {   1.08,   1.08 }
+    #define DEFAULT_Kd_LIST { 114.00, 114.00 }
+  #else
+  // Sidewinder X1
+>>>>>>> Stashed changes
   #define DEFAULT_Kp 14.58
   #define DEFAULT_Ki 1.14
   #define DEFAULT_Kd 46.57
@@ -506,7 +517,11 @@
   //#define DEFAULT_Kp 63.0
   //#define DEFAULT_Ki 2.25
   //#define DEFAULT_Kd 440
+<<<<<<< Updated upstream
 
+=======
+  #endif
+>>>>>>> Stashed changes
 #endif // PIDTEMP
 
 //===========================================================================
@@ -558,7 +573,11 @@
   //#define DEFAULT_bedKp 97.1
   //#define DEFAULT_bedKi 1.41
   //#define DEFAULT_bedKd 1675.16
+<<<<<<< Updated upstream
 
+=======
+  
+>>>>>>> Stashed changes
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #endif // PIDTEMPBED
 
@@ -1165,8 +1184,8 @@
 
 // @section homing
 
-//#define NO_MOTION_BEFORE_HOMING // Inhibit movement until all axes have been homed. Also enable HOME_AFTER_DEACTIVATE for extra safety.
-//#define HOME_AFTER_DEACTIVATE   // Require rehoming after steppers are deactivated. Also enable NO_MOTION_BEFORE_HOMING for extra safety.
+#define NO_MOTION_BEFORE_HOMING // Inhibit movement until all axes have been homed. Also enable HOME_AFTER_DEACTIVATE for extra safety.
+#define HOME_AFTER_DEACTIVATE   // Require rehoming after steppers are deactivated. Also enable NO_MOTION_BEFORE_HOMING for extra safety.
 //#define UNKNOWN_Z_NO_RAISE      // Don't raise Z (lower the bed) if Z is "unknown." For beds that fall when Z is powered off.
 
 //#define Z_HOMING_HEIGHT  4      // (mm) Minimal Z height before homing (G28) for Z clearance above the bed, clamps, ...
@@ -1183,8 +1202,13 @@
 // @section machine
 
 // The size of the print bed
+<<<<<<< Updated upstream
 #define X_BED_SIZE 300
 #define Y_BED_SIZE 300
+=======
+#define X_BED_SIZE 310
+#define Y_BED_SIZE 310
+>>>>>>> Stashed changes
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
@@ -1344,16 +1368,16 @@
  * these options to restore the prior leveling state or to always enable
  * leveling immediately after G28.
  */
-//#define RESTORE_LEVELING_AFTER_G28
+#define RESTORE_LEVELING_AFTER_G28
 //#define ENABLE_LEVELING_AFTER_G28
 
 /**
  * Auto-leveling needs preheating
  */
-//#define PREHEAT_BEFORE_LEVELING
+#define PREHEAT_BEFORE_LEVELING
 #if ENABLED(PREHEAT_BEFORE_LEVELING)
-  #define LEVELING_NOZZLE_TEMP 120   // (°C) Only applies to E0 at this time
-  #define LEVELING_BED_TEMP     50
+  #define LEVELING_NOZZLE_TEMP 160   // (°C) Only applies to E0 at this time
+  #define LEVELING_BED_TEMP     60
 #endif
 
 /**
@@ -1623,13 +1647,21 @@
 
 // Preheat Constants
 #define PREHEAT_1_LABEL       "PLA"
+<<<<<<< Updated upstream
 #define PREHEAT_1_TEMP_HOTEND 210
+=======
+#define PREHEAT_1_TEMP_HOTEND 230
+>>>>>>> Stashed changes
 #define PREHEAT_1_TEMP_BED     60
 #define PREHEAT_1_FAN_SPEED     0 // Value from 0 to 255
 
 #define PREHEAT_2_LABEL       "ABS"
 #define PREHEAT_2_TEMP_HOTEND 240
+<<<<<<< Updated upstream
 #define PREHEAT_2_TEMP_BED     80
+=======
+#define PREHEAT_2_TEMP_BED    80
+>>>>>>> Stashed changes
 #define PREHEAT_2_FAN_SPEED     0 // Value from 0 to 255
 
 /**
