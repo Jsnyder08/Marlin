@@ -804,7 +804,11 @@
     #define HAS_CUSTOM_PROBE_PIN 1
   #endif
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   #if Z_HOME_DIR < 0 //&& (!HAS_CUSTOM_PROBE_PIN || ENABLED(USE_PROBE_FOR_Z_HOMING))
+=======
+  #if Z_HOME_DIR < 0 // && (!HAS_CUSTOM_PROBE_PIN || ENABLED(USE_PROBE_FOR_Z_HOMING))
+>>>>>>> Stashed changes
 =======
   #if Z_HOME_DIR < 0 // && (!HAS_CUSTOM_PROBE_PIN || ENABLED(USE_PROBE_FOR_Z_HOMING))
 >>>>>>> Stashed changes
